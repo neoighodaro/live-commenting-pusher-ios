@@ -11,7 +11,7 @@ if ($comment) {
 
     $options = ['encrypted' => true];
 
-    $pusher = new Pusher('b9f32d17ee5e19db5c65', '6bbe3f94c64cd34e8bee', '328150', $options);
+    $pusher = new Pusher('PUSHER_API_KEY', 'PUSHER_API_SECRET', 'PUSHER_APP_ID', $options);
 
     $pusher->trigger('comments', 'new_comment', ['text' => $comment]);
 } else {

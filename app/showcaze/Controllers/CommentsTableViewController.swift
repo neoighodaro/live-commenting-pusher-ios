@@ -11,9 +11,9 @@ import Alamofire
 import PusherSwift
 
 class CommentsTableViewController: UITableViewController {
-    
+
     let MESSAGES_ENDPOINT = "https://live-commenting-ios-pusher.herokuapp.com/"
-    
+
     var pusher: Pusher!
 
     var comments = [
@@ -23,24 +23,24 @@ class CommentsTableViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         tableView.rowHeight = 78;
         navigationItem.title = "View Comments"
-        
+
         listenForNewComments()
         addComposeButtonToNavigationBar()
     }
 
-    
+
     private func listenForNewComments() -> Void {
-        pusher = Pusher(key: "b9f32d17ee5e19db5c65")
+        pusher = Pusher(key: "PUSHER_API_KEY")
         let channel = pusher.subscribe("comments")
         let _ = channel.bind(eventName: "new_comment", callback: { (data: Any?) -> Void in
             if let data = data as? [String: AnyObject] {
                 let comment = ["username":"Anonymous", "comment": (data["text"] as! String)]
 
                 self.comments.insert(comment, at: 0)
-                
+
                 self.tableView.beginUpdates()
                 self.tableView.insertRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
                 self.tableView.endUpdates()
@@ -48,37 +48,37 @@ class CommentsTableViewController: UITableViewController {
         })
         pusher.connect()
     }
-    
+
     private func addComposeButtonToNavigationBar() -> Void {
         let button = UIBarButtonItem(barButtonSystemItem: .compose,
                                      target: self,
                                      action: #selector(buttonTapped))
         navigationItem.setRightBarButton(button, animated: false)
     }
-    
+
     func buttonTapped() -> Void {
         let alert = UIAlertController(title: "Post",
                                       message: "Enter a comment and see it inserted in real time using Pusher",
                                       preferredStyle: .alert)
-        
+
         alert.addTextField { (textField) in
             textField.text = nil
             textField.placeholder = "Enter comment"
         }
-        
+
         alert.addAction(UIAlertAction(title: "Add Comment", style: .default, handler: { [weak alert] (_) in
             let textField = alert?.textFields![0]
-            
+
             if (textField?.hasText)! {
                 self.postComment(comment: (textField?.text)!)
             }
         }))
-        
+
         alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel, handler: nil))
-        
+
         self.present(alert, animated: true, completion: nil)
     }
-    
+
     private func postComment(comment: String) -> Void {
         Alamofire.request(MESSAGES_ENDPOINT, method: .post, parameters: ["comment": comment])
             .validate()
