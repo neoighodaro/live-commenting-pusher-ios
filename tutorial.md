@@ -34,7 +34,7 @@ target 'showcaze' do
 
   # Pods for showcaze
   pod 'PusherSwift', '~> 4.0'
-  pod 'AlamofireImage', '~> 3.1'
+  pod 'Alamofire', '~> 4.4'
 end
 ```
 And then run `pod install` to download and install the dependencies. When cocoapods asks you to, close XCode. Now open the `project_name.xcworkspace` file in the root of your project, in my case, the `showcaze.xcworkspace` file. This should launch XCode.
@@ -72,7 +72,7 @@ import PusherSwift
 
 class CommentsTableViewController: UITableViewController {
 
-    let MESSAGES_ENDPOINT = "http://live-commenting-ios.herokuapp.com/comment"
+    let MESSAGES_ENDPOINT = "https://live-commenting-ios.herokuapp.com/"
 
     var pusher: Pusher!
 
@@ -194,21 +194,34 @@ To highlight some important parts of the code, lets break a few down.
 This function basically initialises the Pusher Swift SDK, subscribes to a channel `comments`, listens for an event `new_comment` and then fires a callback when that event is triggered from anywhere. In the callback, the text is appended to the top of the table data, then the `tableView` is updated with the new row.
 
 ``` swift
-    private func listenForNewComments() -> Void {
-        pusher = Pusher(key: "PUSHER_API_KEY")
-        let channel = pusher.subscribe("comments")
-        let _ = channel.bind(eventName: "new_comment", callback: { (data: Any?) -> Void in
-            if let data = data as? [String: AnyObject] {
-                let comment = ["username":"Anonymous", "comment": (data["text"] as! String)]
+    private func addComposeButtonToNavigationBar() -> Void {
+        let button = UIBarButtonItem(barButtonSystemItem: .compose,
+                                     target: self,
+                                     action: #selector(buttonTapped))
+        navigationItem.setRightBarButton(button, animated: false)
+    }
 
-                self.comments.insert(comment, at: 0)
+    func buttonTapped() -> Void {
+        let alert = UIAlertController(title: "Post",
+                                      message: "Enter a comment and see it inserted in real time using Pusher",
+                                      preferredStyle: .alert)
 
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [IndexPath(row: 0, section: 0)], with: .automatic)
-                self.tableView.endUpdates()
+        alert.addTextField { (textField) in
+            textField.text = nil
+            textField.placeholder = "Enter comment"
+        }
+
+        alert.addAction(UIAlertAction(title: "Add Comment", style: .default, handler: { [weak alert] (_) in
+            let textField = alert?.textFields![0]
+
+            if (textField?.hasText)! {
+                self.postComment(comment: (textField?.text)!)
             }
-        })
-        pusher.connect()
+        }))
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: UIAlertActionStyle.cancel, handler: nil))
+
+        self.present(alert, animated: true, completion: nil)
     }
 ```
 This block simply adds a compose button at the right of the navigation bar. It fires a `buttonTapped` callback when the button is…well…tapped. The `buttonTap` callback launches an alert view controller with a text field where the comment text is supposed to be entered into.
